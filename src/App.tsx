@@ -40,25 +40,27 @@ export default function App() {
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const stored = localStorage.getItem('app_settings_2020_2026');
-      return stored
-        ? JSON.parse(stored)
-        : {
-            pinCode: '1234',
-            isPinRequired: false,
-            isUnlocked: true,
-            activeMode: 'reader',
-            androidFrameVisible: true,
-            bgTheme: 'rose',
-            isAudioPlaying: false,
-            volume: 0.8
-          };
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return { ...parsed, androidFrameVisible: false };
+      }
+      return {
+        pinCode: '1234',
+        isPinRequired: false,
+        isUnlocked: true,
+        activeMode: 'reader',
+        androidFrameVisible: false,
+        bgTheme: 'rose',
+        isAudioPlaying: false,
+        volume: 0.8
+      };
     } catch {
       return {
         pinCode: '1234',
         isPinRequired: false,
         isUnlocked: true,
         activeMode: 'reader',
-        androidFrameVisible: true,
+        androidFrameVisible: false,
         bgTheme: 'rose',
         isAudioPlaying: false,
         volume: 0.8

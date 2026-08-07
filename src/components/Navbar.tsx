@@ -102,10 +102,24 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Android Frame Switch */}
           <button
             onClick={() => onUpdateSettings({ androidFrameVisible: !settings.androidFrameVisible })}
-            title={settings.androidFrameVisible ? "Ver en pantalla completa" : "Ver en marco estilo Android"}
-            className="p-2 rounded-xl bg-zinc-100/80 border border-zinc-200/80 text-zinc-700 hover:bg-zinc-200 transition-all hidden sm:flex"
+            title={settings.androidFrameVisible ? "Ver en pantalla completa de PC" : "Simular marco de teléfono Android"}
+            className={`p-2 rounded-xl transition-all hidden sm:flex items-center gap-1 text-xs font-semibold ${
+              settings.androidFrameVisible
+                ? 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                : 'bg-zinc-100/80 border border-zinc-200/80 text-zinc-700 hover:bg-zinc-200'
+            }`}
           >
-            {settings.androidFrameVisible ? <Maximize2 className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
+            {settings.androidFrameVisible ? (
+              <>
+                <Maximize2 className="w-4 h-4" />
+                <span className="hidden md:inline">Pantalla Completa (PC)</span>
+              </>
+            ) : (
+              <>
+                <Smartphone className="w-4 h-4" />
+                <span className="hidden md:inline">Marco Celular</span>
+              </>
+            )}
           </button>
         </div>
       </div>

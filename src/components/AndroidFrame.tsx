@@ -37,11 +37,13 @@ export const AndroidFrame: React.FC<AndroidFrameProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // On real mobile screens or if frame is disabled manually, render clean full-screen layout
+  // On real mobile screens or if phone frame is disabled, render clean responsive web layout for PC/Mobile
   if (!enabled || isMobileScreen) {
     return (
-      <div className="w-full min-h-screen bg-zinc-50 text-zinc-900 font-sans flex flex-col">
-        {children}
+      <div className="w-full min-h-screen bg-zinc-100/70 text-zinc-900 font-sans flex flex-col items-center py-0 md:py-6 px-0 md:px-6 transition-all">
+        <div className="w-full max-w-5xl min-h-screen md:min-h-[92vh] bg-white md:border border-zinc-200/90 md:rounded-3xl shadow-sm flex flex-col overflow-hidden">
+          {children}
+        </div>
       </div>
     );
   }
