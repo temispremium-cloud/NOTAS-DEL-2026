@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: process.env.NODE_ENV === 'production' ? '/NOTAS-DEL-2026/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
