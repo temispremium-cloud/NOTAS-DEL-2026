@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Heart, Sparkles, Volume2, VolumeX, CheckCircle, Quote, Calendar } from 'lucide-react';
 import { NoteItem } from '../types';
+import { speakText, stopSpeech } from '../utils/speechUtils';
 
 interface FinalCarta2026Props {
   isOpen: boolean;
@@ -37,27 +38,29 @@ Tu explicación desde el alma.`;
 
   const letterText = cartaNote ? cartaNote.content : defaultLetterContent;
 
-  const handleSpeech = () => {
-    if (!('speechSynthesis' in window)) return;
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+    };
+  }, []);
 
+  const handleSpeech = () => {
     if (isPlaying) {
-      window.speechSynthesis.cancel();
+      stopSpeech();
       setIsPlaying(false);
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(letterText);
-    utterance.lang = 'es-ES';
-    utterance.rate = 0.9;
-    utterance.onend = () => {
-      setIsPlaying(false);
-      setHasRead(true);
-    };
-    utterance.onerror = () => setIsPlaying(false);
-
     setIsPlaying(true);
-    window.speechSynthesis.speak(utterance);
+    speakText(
+      letterText,
+      () => setIsPlaying(true),
+      () => {
+        setIsPlaying(false);
+        setHasRead(true);
+      },
+      () => setIsPlaying(false)
+    );
   };
 
   return (

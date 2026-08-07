@@ -19,7 +19,7 @@ export default function App() {
   // Persistent Years Overview
   const [yearsOverview, setYearsOverview] = useState<YearOverview[]>(() => {
     try {
-      const stored = localStorage.getItem('saved_years_overview');
+      const stored = localStorage.getItem('saved_years_overview_v2');
       return stored ? JSON.parse(stored) : INITIAL_YEARS_OVERVIEW;
     } catch {
       return INITIAL_YEARS_OVERVIEW;
@@ -29,7 +29,7 @@ export default function App() {
   // Persistent Notes
   const [notes, setNotes] = useState<NoteItem[]>(() => {
     try {
-      const stored = localStorage.getItem('saved_notes_2020_2026');
+      const stored = localStorage.getItem('saved_notes_2020_2026_v9');
       return stored ? JSON.parse(stored) : INITIAL_NOTES;
     } catch {
       return INITIAL_NOTES;
@@ -77,11 +77,11 @@ export default function App() {
 
   // Save to LocalStorage
   useEffect(() => {
-    localStorage.setItem('saved_notes_2020_2026', JSON.stringify(notes));
+    localStorage.setItem('saved_notes_2020_2026_v9', JSON.stringify(notes));
   }, [notes]);
 
   useEffect(() => {
-    localStorage.setItem('saved_years_overview', JSON.stringify(yearsOverview));
+    localStorage.setItem('saved_years_overview_v2', JSON.stringify(yearsOverview));
   }, [yearsOverview]);
 
   useEffect(() => {

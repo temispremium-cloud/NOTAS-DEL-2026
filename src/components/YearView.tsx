@@ -19,6 +19,7 @@ import {
   Calendar,
   BookOpen
 } from 'lucide-react';
+import { speakText, stopSpeech } from '../utils/speechUtils';
 
 interface YearViewProps {
   overview: YearOverview;
@@ -40,30 +41,23 @@ export const YearView: React.FC<YearViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [readingNoteId, setReadingNoteId] = useState<string | null>(null);
 
-  // Text-To-Speech handler using browser SpeechSynthesis
+  // Text-To-Speech handler using browser SpeechSynthesis with robust Spanish voice selection
   const handleReadAloud = (note: NoteItem) => {
-    if (!('speechSynthesis' in window)) {
-      alert('Tu navegador no soporta lectura por voz.');
-      return;
-    }
-
     if (readingNoteId === note.id) {
-      window.speechSynthesis.cancel();
+      stopSpeech();
       setReadingNoteId(null);
       return;
     }
 
-    window.speechSynthesis.cancel();
     const textToSpeak = `${note.title}. ${note.content} ${note.quote ? `. Frase destacada: ${note.quote}` : ''}`;
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.lang = 'es-ES';
-    utterance.rate = 0.92; // Slightly slower, calm emotional pace
-
-    utterance.onend = () => setReadingNoteId(null);
-    utterance.onerror = () => setReadingNoteId(null);
-
+    
     setReadingNoteId(note.id);
-    window.speechSynthesis.speak(utterance);
+    speakText(
+      textToSpeak,
+      () => setReadingNoteId(note.id),
+      () => setReadingNoteId(null),
+      () => setReadingNoteId(null)
+    );
   };
 
   const filteredNotes = notes.filter(n =>
@@ -238,17 +232,27 @@ export const YearView: React.FC<YearViewProps> = ({
                 </div>
 
                 {/* Speech Reader & Editor Controls */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => handleReadAloud(note)}
-                    title={readingNoteId === note.id ? "Detener lectura" : "Escuchar esta nota"}
-                    className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
+                    title={readingNoteId === note.id ? "Detener reproducción de voz" : "Haz clic para escuchar esta nota leída en voz alta"}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
                       readingNoteId === note.id
                         ? 'bg-indigo-600 text-white border-indigo-600 animate-pulse'
-                        : 'bg-zinc-100 border-zinc-200 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200'
+                        : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300'
                     }`}
                   >
-                    {readingNoteId === note.id ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    {readingNoteId === note.id ? (
+                      <>
+                        <VolumeX className="w-3.5 h-3.5" />
+                        <span>Detener voz</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Escuchar en voz alta</span>
+                      </>
+                    )}
                   </button>
 
                   {settings.activeMode === 'editor' && (
