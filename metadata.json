@@ -1,5 +1,5 @@
 {
-  "name": "Notas y Explicación 2020-2026",
+  "name": "Esto es para ti",
   "description": "Una bitácora de notas y línea de tiempo interactiva (2020-2026) con diseño estilo Android para expresar vivencias, reflexiones y explicaciones sinceras.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

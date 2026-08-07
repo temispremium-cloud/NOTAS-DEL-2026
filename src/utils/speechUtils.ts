@@ -1,14 +1,32 @@
-// Helper for SpeechSynthesis with voice selection, Chrome bug workarounds & resume keep-alive
+// Helper for SpeechSynthesis with mobile sentence chunking, Android/iOS TTS bug workarounds & keep-alive
 
-let speechKeepAliveInterval: any = null;
+let speechQueue: string[] = [];
+let isCurrentlySpeaking = false;
+let activeOnStart: (() => void) | null = null;
+let activeOnEnd: (() => void) | null = null;
+let activeOnError: ((err: any) => void) | null = null;
+let keepAliveTimer: any = null;
 
 export const stopSpeech = () => {
-  if (speechKeepAliveInterval) {
-    clearInterval(speechKeepAliveInterval);
-    speechKeepAliveInterval = null;
+  if (keepAliveTimer) {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = null;
   }
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
+  speechQueue = [];
+  isCurrentlySpeaking = false;
+
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {
+      console.warn('Error stopping speech synthesis:', e);
+    }
+  }
+
+  if (activeOnEnd) {
+    const cb = activeOnEnd;
+    activeOnEnd = null;
+    cb();
   }
 };
 
@@ -18,91 +36,150 @@ export const speakText = (
   onEnd?: () => void,
   onError?: (err: any) => void
 ): (() => void) => {
-  if (!('speechSynthesis' in window)) {
-    alert('Tu navegador no soporta lectura por voz.');
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    alert('Tu navegador o dispositivo no admite la lectura en voz alta.');
     return () => {};
   }
 
-  // Stop any existing speech
-  stopSpeech();
-
-  // Force resume if paused
-  if (window.speechSynthesis.paused) {
-    window.speechSynthesis.resume();
-  }
-
-  // Clean text slightly for better pronunciation
-  const cleanText = text.replace(/[\#\*\_]/g, ' ').trim();
-  const utterance = new SpeechSynthesisUtterance(cleanText);
-  utterance.lang = 'es-ES';
-  utterance.rate = 0.95;
-  utterance.pitch = 1.0;
-
-  const assignSpanishVoice = () => {
-    try {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices && voices.length > 0) {
-        // Priority order: Spanish voices
-        const spanishVoice = 
-          voices.find(v => v.lang.startsWith('es-ES')) ||
-          voices.find(v => v.lang.startsWith('es-MX')) ||
-          voices.find(v => v.lang.startsWith('es-US')) ||
-          voices.find(v => v.lang.startsWith('es')) ||
-          voices.find(v => v.name.toLowerCase().includes('spanish'));
-
-        if (spanishVoice) {
-          utterance.voice = spanishVoice;
-          utterance.lang = spanishVoice.lang;
-        }
-      }
-    } catch (e) {
-      console.warn('Could not assign speech voice:', e);
-    }
-  };
-
-  assignSpanishVoice();
-
-  // In Chrome, voices might load asynchronously
-  if (window.speechSynthesis.onvoiceschanged !== undefined) {
-    window.speechSynthesis.onvoiceschanged = () => {
-      assignSpanishVoice();
-    };
-  }
-
-  utterance.onstart = () => {
-    if (onStart) onStart();
-  };
-
-  utterance.onend = () => {
-    stopSpeech();
-    if (onEnd) onEnd();
-  };
-
-  utterance.onerror = (event) => {
-    console.warn('SpeechSynthesis error event:', event);
-    stopSpeech();
-    if (onError) onError(event);
-  };
-
   try {
-    // Resume again before speak
-    window.speechSynthesis.resume();
-    window.speechSynthesis.speak(utterance);
+    // Stop any active speech
+    stopSpeech();
 
-    if (onStart) onStart();
+    // Clean text from markdown formatting
+    const clean = text.replace(/[\#\*\_]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!clean) return () => {};
 
-    // Chrome workaround: long text stops speaking after 15 seconds unless periodically resumed
-    speechKeepAliveInterval = setInterval(() => {
-      if (!window.speechSynthesis.speaking) {
-        stopSpeech();
+    // Break text into sentences safely WITHOUT regex lookbehinds (which crash older Safari/Android JS engines)
+    const rawMatches = clean.match(/[^.!?]+[.!?]*/g) || [clean];
+    const chunks: string[] = [];
+
+    for (const matchStr of rawMatches) {
+      const trimmed = matchStr.trim();
+      if (!trimmed) continue;
+
+      if (trimmed.length > 160) {
+        // Split long sentence by commas, semicolons or spaces
+        const parts = trimmed.match(/.{1,140}(?:\s+|$)/g) || [trimmed];
+        for (const p of parts) {
+          const pt = p.trim();
+          if (pt) chunks.push(pt);
+        }
       } else {
+        chunks.push(trimmed);
+      }
+    }
+
+    if (chunks.length === 0) return () => {};
+
+    speechQueue = [...chunks];
+    isCurrentlySpeaking = true;
+    activeOnStart = onStart || null;
+    activeOnEnd = onEnd || null;
+    activeOnError = onError || null;
+
+    // Mobile gesture unlock
+    try {
+      if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
       }
-    }, 4000);
-  } catch (err) {
-    console.error('Failed to invoke speech synthesis:', err);
+    } catch (e) {}
+
+    if (activeOnStart) {
+      activeOnStart();
+    }
+
+    const speakNextSentence = () => {
+      if (!isCurrentlySpeaking || speechQueue.length === 0) {
+        const cb = activeOnEnd;
+        activeOnEnd = null;
+        isCurrentlySpeaking = false;
+        if (keepAliveTimer) {
+          clearInterval(keepAliveTimer);
+          keepAliveTimer = null;
+        }
+        if (cb) cb();
+        return;
+      }
+
+      const currentSentence = speechQueue.shift();
+      if (!currentSentence) {
+        speakNextSentence();
+        return;
+      }
+
+      try {
+        const utterance = new SpeechSynthesisUtterance(currentSentence);
+        utterance.lang = 'es-ES';
+        utterance.rate = 0.92;
+        utterance.volume = 1.0;
+        utterance.pitch = 1.0;
+
+        // Try Spanish voice selection safely
+        try {
+          const voices = window.speechSynthesis.getVoices();
+          if (voices && voices.length > 0) {
+            const spanishVoice =
+              voices.find(v => v.lang && v.lang.toLowerCase().startsWith('es')) ||
+              voices.find(v => v.name && (v.name.toLowerCase().includes('spanish') || v.name.toLowerCase().includes('español')));
+
+            if (spanishVoice) {
+              utterance.voice = spanishVoice;
+              utterance.lang = spanishVoice.lang || 'es-ES';
+            }
+          }
+        } catch (vErr) {
+          console.warn('Voice retrieval error:', vErr);
+        }
+
+        utterance.onend = () => {
+          if (isCurrentlySpeaking) {
+            setTimeout(speakNextSentence, 100);
+          }
+        };
+
+        utterance.onerror = (event) => {
+          console.warn('Speech chunk warning/error:', event);
+          if (speechQueue.length > 0 && isCurrentlySpeaking) {
+            setTimeout(speakNextSentence, 100);
+          } else {
+            stopSpeech();
+            if (activeOnError) activeOnError(event);
+          }
+        };
+
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.error('Utterance failure:', err);
+        if (speechQueue.length > 0 && isCurrentlySpeaking) {
+          setTimeout(speakNextSentence, 100);
+        } else {
+          stopSpeech();
+          if (activeOnError) activeOnError(err);
+        }
+      }
+    };
+
+    speakNextSentence();
+
+    // Android background keep-alive to avoid speech truncation on long texts
+    keepAliveTimer = setInterval(() => {
+      try {
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.resume();
+          }
+        }
+      } catch (e) {}
+    }, 2000);
+
+  } catch (globalErr) {
+    console.error('Fatal error in speakText:', globalErr);
     stopSpeech();
-    if (onError) onError(err);
+    if (onError) onError(globalErr);
   }
 
   return () => {

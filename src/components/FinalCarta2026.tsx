@@ -94,51 +94,51 @@ Tu explicación desde el alma.`;
         </div>
 
         {/* Letter Body */}
-        <div className="p-6 space-y-5 text-xs sm:text-sm text-zinc-800 leading-relaxed font-sans relative z-10 max-h-[70vh] overflow-y-auto">
+        <div className="p-5 sm:p-6 space-y-5 text-sm sm:text-base text-zinc-900 leading-relaxed font-sans relative z-10 max-h-[75vh] overflow-y-auto">
           
-          <div className="flex items-center justify-between text-xs text-zinc-500 border-b border-zinc-100 pb-2">
-            <span className="flex items-center gap-1 font-mono text-indigo-700 font-semibold">
-              <Calendar className="w-3.5 h-3.5" /> 2026 - Año de Cierre
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs text-zinc-500 border-b border-zinc-100 pb-3">
+            <span className="flex items-center gap-1 font-mono text-indigo-700 font-bold text-xs sm:text-sm">
+              <Calendar className="w-4 h-4 text-indigo-600" /> 2026 - Año de Cierre
             </span>
             <button
               onClick={handleSpeech}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 isPlaying
-                  ? 'bg-indigo-600 text-white border-indigo-700 animate-pulse'
-                  : 'bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200'
+                  ? 'bg-indigo-600 text-white border-indigo-700 animate-pulse shadow-xs'
+                  : 'bg-indigo-50 text-indigo-800 border-indigo-200 hover:bg-indigo-100'
               }`}
             >
-              {isPlaying ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-              <span>{isPlaying ? 'Pausar Lectura' : 'Escuchar Carta'}</span>
+              {isPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-indigo-600" />}
+              <span>{isPlaying ? 'Pausar Lectura de Voz' : 'Escuchar Carta en Voz Alta'}</span>
             </button>
           </div>
 
-          <div className="bg-zinc-50 p-5 rounded-2xl border border-zinc-200 shadow-xs whitespace-pre-line text-zinc-800 leading-relaxed font-sans font-medium">
+          <div className="bg-zinc-50 p-5 sm:p-6 rounded-2xl border border-zinc-200 shadow-2xs whitespace-pre-line text-zinc-900 leading-relaxed sm:leading-loose text-base sm:text-lg font-sans font-normal">
             {letterText}
           </div>
 
-          <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs italic flex items-center gap-2 font-medium">
-            <Quote className="w-4 h-4 text-indigo-600 shrink-0" />
+          <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-sm sm:text-base italic flex items-center gap-2.5 font-medium">
+            <Quote className="w-5 h-5 text-indigo-600 shrink-0" />
             <span>"Gracias por haber formado parte de mi vida entre el 2020 y el 2026."</span>
           </div>
 
           {/* Stamp / Confirmation */}
-          <div className="pt-2 flex items-center justify-between text-xs">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm">
             <button
               onClick={() => setHasRead(!hasRead)}
-              className={`px-3 py-1.5 rounded-xl border font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-full sm:w-auto px-4 py-2.5 rounded-xl border font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 hasRead
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  : 'bg-zinc-100 text-zinc-700 border-zinc-200'
               }`}
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
               <span>{hasRead ? 'Leída con Paz' : 'Marcar como leída'}</span>
             </button>
 
             <button
               onClick={onClose}
-              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer"
             >
               Cerrar Carta
             </button>
